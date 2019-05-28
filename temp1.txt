@@ -1,0 +1,176 @@
+1. Datapump
+Netowrk link 不需要產生dump file
+
+2.
+dedicated support 很多session, 短時間可以處理掉
+
+
+5.
+undo table sapce retention noguarantee : transaction 優先
+retention guarantee : query 正在使用的block 不會被transaction 拿去用, undo 已經commmit, 仍可保留
+避免ORA - 0155 sanpshot too old 問題
+
+8.
+A. user managed backups data files and control files -> RMAN 處理, 不是FRA
+
+9.
+consistent backup 一定是DB是close的, 無法進行任何transaction
+user-managed backup 是使用者自訂備份方式(e.g. file copy 或是 storage sanpshot), 非以RMAN 備份
+
+10.
+restore 回復到某個時間點
+recovery 把change () apply 上去
+
+12. 
+SHUT DOWN ABORT
+DB 不做close, file 不做close , transaction ....
+都丟給重起時處理
+
+13.
+temp_undo_enabled, 12c 新功能
+在DML 也會產生undo 資料, 放到undo tablespace
+針對undo change, 會寫redo log
+-> undo 的變動都寫在 temp tablespace, 包含redo 都會減少
+
+針對Active Dataguard, 有需要讓temp 可以read-write, 一般設定
+A. Undo records 存在temp
+C. Undo records 存在temp
+
+
+19.
+UNIFORM extents 大小是一樣的, 
+B. 舊版才是data dictionary
+C. 5M initial size
+D. 事後可以add data files
+
+20.
+UNDO_RETENTION
+如果trans 已被commit, 要保存的時間
+
+D. fixed size 
+retention guarantee disable, 表示還沒expireed trans 空間會被搶走
+
+22.
+expired backup set/image copy 有帳無料(在rman或archivelog上有, 但事實上在file system 沒有資料)
+obsolete 才是真的過期
+
+23.
+PCTFREE, 每個segment 都保留20%, 給現有的data block update時使用
+在原block 留下pointer, 將資料寫到別的block, 此為row migration, 會造成無效IO
+row chaining : insert 時已大於這個block, 就是一定要寫到別的table space了 !!
+
+
+26. 標準table heap (其他有index-organization)
+shrink 會搬block, 所以一定要enable row movement
+
+36.
+conventional path, 把text 轉成sql, 再匯入
+direct path 把資料轉成block 放進去, high water mark 往後移, 比較快
+Instead of filling a bind array buffer and passing it to the Oracle database with a SQL INSERT statement, 
+a direct path load uses the direct path API to pass the data to be loaded to the load engine in the server
+*multiplex 每個group 多個member
+
+
+
+39.
+Job 包含 program(做什麼), schedule(何時做)
+
+42.
+select ...for update... 目的就是要lock 住特定table, update=某些值
+只要是相同的row 都會有影晌
+for update OF 欄位, 就只lock 某個欄位
+query不同的欄位/insert new row 都不受影晌
+
+
+** 44.
+B. 不寫undo
+C. 會產生undo, 寫在temp tablespace
+D. 還是會寫到buffer cache
+
+45.
+D. block有被change過, 還沒有uncommitted 時, 狀態是active, blcok 還是保留住的
+
+48.
+SQL*Loader Express Mode, 12c 新功能, 不用指定control file及格式
+
+
+49.有問題先不討論
+
+52. 參考照片
+Job - 	job class(Resource consumer group, DB Service name)/
+		Window(Resource Plan, Window Group)
+	- job chain
+
+############################################################################################33
+
+58.
+A. rolling upgrade -> 某個node upgrade再依序更新其他node
+C. 先做DBUA後才能執行cacctl.pl, catupgrd.sql, 但這些是upgrade metadata
+
+59.
+parent table 刪值, children table 影晌
+如果沒有Index, 則是full table lock
+
+62.
+最近的checkpoint 時間點, 再apply 之後的 transaction 
+B. 是DBWr 才會寫data to data files
+E. 是CKPT 才會寫checkpoint information to data files
+
+**** 66. 
+Resumeable Space Allocation 
+如果transaction需要空間, 不管是一般table space or Temp space, 這個sql 就會failed
+有設定就會等時間過再failed
+non temporary....(再確認)
+
+
+67.
+A.data pump 都是存在DB裡面 (server file system), 不像exp/imp 是在client上要有
+
+73.
+PFILE 是text
+
+74.
+unifie auditing ->存在DB(SYSAUX)
+
+77.
+只有create audit policy, 還沒有下audit policy
+
+78.
+因為Retention Noguarantee, undo 的transaction 已經被commit, block就可能被別人拿去用, 是不是12mins不保証
+updete			/ 發動query	/update
+->已經committed				 -> 又發動committed, 因此block 可能已經異動
+也就是undo tablespace 可能overlap
+
+A.B 12mins 不是重點, uncommitted 可能已經被拿去用了
+D. 12mins 不是重點, 已經committed 可能已經被拿去用了
+
+80. OHS(Oracle HTTP Server) 內建在EM Express
+
+86
+job chain, scheduling
+
+92. 
+最正確是 21453
+
+93.
+false 表不publish
+
+96
+在root 開 
+create common role, 預設在所有 pdb 都有效 (container =all)
+grant 預設在目前container 有效(container=local), 要加container = all 參數
+
+103.
+12cR2 PDB有local undo
+***12cR1 PDB不會有自己的undo tablesapce
+
+109.
+特殊user, 如SYSBACKUP
+因為DB還未open, 但因為要做備份等行為, 故透過ORAPWD檔進行身份驗証
+
+
+
+
+
+
+
